@@ -1,52 +1,58 @@
-name: Compile EDGY ESP (Direct .dylib)
+name: Build EDGY ESP (Direct .dylib)
 
 on:
   workflow_dispatch:
-    inputs:
-      tweak_name:
-        description: 'Nama file dylib output'
-        required: true
-        default: 'EdgyESP'
-        type: string
 
 jobs:
-  build-dylib:
-    name: Build Direct .dylib for Sideload
-    runs-on: ubuntu-latest
+  build:
+    runs-on: macos-14
     
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Install Theos (Clean)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential lzma liblzma-dev libssl-dev
-          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
-          git clone https://github.com/theos/sdks.git $GITHUB_WORKSPACE/theos/sdks
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
-
-      - name: Build .dylib
+          # Bersihkan folder lama
+          rm -rf ./theos
+          
+          # Clone Theos
+          git clone --recursive https://github.com/theos/theos.git ./theos
+          
+          # Download SDKs arm64
+          cd ./theos
+          curl -L https://github.com/theos/sdks/archive/master.zip -o sdks.zip
+          unzip -q sdks.zip
+          mkdir -p sdks
+          mv sdks-master/* sdks/ 2>/dev/null || true
+          rm -rf sdks-master sdks.zip
+          
+          # Set environment
+          echo "$(pwd)/bin" >> $GITHUB_PATH
+          echo "THEOS=$(pwd)" >> $GITHUB_ENV
+          
+      - name: Build Tweak
         run: |
-          export THEOS=$GITHUB_WORKSPACE/theos
           cd tweak
           make clean
           make package FINALPACKAGE=1
           
-          # Extract .dylib from .deb
+      - name: Extract .dylib from .deb
+        run: |
+          cd tweak
           mkdir -p extracted
-          dpkg-deb -x *.deb extracted/
-          cp extracted/Library/MobileSubstrate/DynamicLibraries/*.dylib .
-          echo "✅ Build successful"
+          dpkg-deb -x *.deb extracted/ 2>/dev/null || true
+          find extracted -name "*.dylib" -exec cp {} ./ \;
+          ls -la *.dylib || echo "No dylib found"
           
-      - name: Upload .dylib (Direct)
+      - name: Upload .dylib
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.tweak_name }}.dylib
+          name: EdgyESP.dylib
           path: tweak/*.dylib
-
+          
       - name: Upload .deb (Backup)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.tweak_name }}.deb
+          name: EdgyESP.deb
           path: tweak/*.deb
