@@ -1,0 +1,9 @@
+Package: com.cyclone.edgyesp
+Name: EdgyESP
+Depends: mobilesubstrate
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Lightweight ESP for MLBB
+Maintainer: CycloneP2
+Author: CycloneP2
+Section: Tweaks

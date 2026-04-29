@@ -1,0 +1,36 @@
+name: Build EdgyESP
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Theos
+        uses: azure/setup-theos@v1
+        with:
+          theos-src: https://github.com/theos/theos.git
+
+      - name: Setup SDK
+        run: |
+          git clone https://github.com/theos/sdks.git $THEOS/sdks
+          
+      - name: Build
+        run: |
+          make package FINALPACKAGE=1
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: EdgyESP-deb
+          path: packages/*.deb
