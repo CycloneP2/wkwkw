@@ -12,28 +12,32 @@ on:
 jobs:
   build-dylib:
     name: Build Direct .dylib for Sideload
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Theos
-        uses: Randomblock1/theos-action@v1
-        with:
-          theos-dir: './theos'
-          theos-src: 'https://github.com/theos/theos'
-          theos-sdks: 'https://github.com/theos/sdks'
-
-      - name: Build .dylib directly
+      - name: Setup Theos
         run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential lzma liblzma-dev libssl-dev
+          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+          git clone https://github.com/theos/sdks.git $GITHUB_WORKSPACE/theos/sdks
+          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+
+      - name: Build .dylib
+        run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
           cd tweak
           make clean
           make package FINALPACKAGE=1
+          
           # Extract .dylib from .deb
           mkdir -p extracted
           dpkg-deb -x *.deb extracted/
           cp extracted/Library/MobileSubstrate/DynamicLibraries/*.dylib .
+          echo "✅ Build successful"
           
       - name: Upload .dylib (Direct)
         uses: actions/upload-artifact@v4
