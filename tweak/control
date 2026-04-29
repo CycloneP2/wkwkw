@@ -1,0 +1,8 @@
+Package: com.edgy.esp
+Name: EdgyESP
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: ESP Only for MLBB (Sideload Ready)
+Maintainer: EdgyTeam
+Author: EdgyTeam
+Section: Tweaks
